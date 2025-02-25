@@ -1,0 +1,100 @@
+services:
+  open-webui:
+    container_name: open-webui
+    image: ghcr.io/open-webui/open-webui:main
+    environment:
+      OPENAI_API_BASE_URL: http://litellm:4000/v1
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_ENDPOINT_URL: "https://s3.eu-west-1.amazonaws.com"
+      S3_REGION_NAME: eu-west-1
+      S3_BUCKET_NAME: open-webui-cloud-bncrt-com
+      STORAGE_PROVIDER: s3
+    ports:
+      - 3000:8080
+    volumes:
+      - open-webui:/app/backend/data
+    restart: always
+    depends_on:
+      - litellm
+
+  tika:
+    image: apache/tika:latest-full
+    container_name: tika
+    ports:
+      - "9998:9998"
+    restart: unless-stopped
+
+  litellm:
+    container_name: litellm
+    build:
+      context: .
+      args:
+        target: runtime
+    image: ghcr.io/berriai/litellm:main-latest
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION_NAME: us-east-1
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@litellm-db:5432/${POSTGRES_DB}
+      STORE_MODEL_IN_DB: "True" # allows adding models to proxy via UI
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${UI_USERNAME}
+      UI_PASSWORD: ${UI_PASSWORD}
+    entrypoint: "litellm"
+    command:
+      - "--config"
+      - "/app/config.yml"
+      - "--detailed_debug"
+    ports:
+      - 4000:4000
+    volumes:
+      - litellm-files:/app
+    restart: always
+    depends_on:
+      - git-checkout
+      - litellm-db
+
+  litellm-db:
+    container_name: litellm-db
+    image: postgres:16-alpine
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./litellm-db:/var/lib/postgresql/data:rw
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: always
+
+  # Service container
+  # https://github.com/portainer/portainer/issues/6390#issuecomment-1100954657
+  git-checkout:
+    container_name: git-checkout
+    image: bitnami/git:latest
+    working_dir: /temp
+    environment:
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_TOKEN=${GIT_TOKEN}
+    command: >
+      bash -c "
+        if [ -d 'home-cloud' ]; then
+          cd home-cloud && git pull
+        else
+          git clone https://$GIT_USERNAME:$GIT_TOKEN@github.com/abiencourt/home-cloud.git
+        fi &&
+        cp -R ./home-cloud/portainer/stacks/open-webui-litellm/litellm/. /litellm
+      "
+    volumes:
+      - litellm-files:/litellm
+
+volumes:
+  open-webui:
+  litellm-files:
