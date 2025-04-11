@@ -3,8 +3,8 @@ services:
     container_name: open-webui
     image: ghcr.io/open-webui/open-webui:main
     environment:
-      OPENAI_API_BASE_URL: http://litellm:4000/v1
-      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
+      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       S3_ENDPOINT_URL: "https://s3.eu-west-1.amazonaws.com"
@@ -80,17 +80,14 @@ services:
     container_name: git-checkout
     image: bitnami/git:latest
     working_dir: /temp
-    environment:
-      - GIT_USERNAME=${GIT_USERNAME}
-      - GIT_TOKEN=${GIT_TOKEN}
     command: >
       bash -c "
-        if [ -d 'home-cloud' ]; then
-          cd home-cloud && git pull
+        if [ -d 'portainer-stacks' ]; then
+          cd portainer-stacks && git pull
         else
-          git clone https://$GIT_USERNAME:$GIT_TOKEN@github.com/abiencourt/home-cloud.git
+          git clone https://github.com/abiencourt/portainer-stacks.git
         fi &&
-        cp -R ./home-cloud/portainer/stacks/open-webui-litellm/litellm/. /litellm
+        cp -R ./portainer-stacks/open-webui-litellm/litellm/. /litellm
       "
     volumes:
       - litellm-files:/litellm
