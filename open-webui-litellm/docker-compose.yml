@@ -2,15 +2,8 @@ services:
   open-webui:
     container_name: open-webui
     image: ghcr.io/open-webui/open-webui:main
-    environment:
-      OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
-      OPENAI_API_KEY: ${OPENROUTER_API_KEY}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
-      S3_ENDPOINT_URL: "https://s3.eu-west-1.amazonaws.com"
-      S3_REGION_NAME: eu-west-1
-      S3_BUCKET_NAME: open-webui-cloud-bncrt-com
-      STORAGE_PROVIDER: s3
+    env_file:
+      - open-webui.env
     ports:
       - 3000:8080
     volumes:
@@ -18,6 +11,7 @@ services:
     restart: always
     depends_on:
       - litellm
+      - tika # Added tika as dependency as it's used in env vars
 
   tika:
     image: apache/tika:latest-full
@@ -95,3 +89,4 @@ services:
 volumes:
   open-webui:
   litellm-files:
+
