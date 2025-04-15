@@ -11,6 +11,14 @@ services:
       S3_REGION_NAME: eu-west-1
       S3_BUCKET_NAME: open-webui-cloud-bncrt-com
       STORAGE_PROVIDER: s3
+      WEBUI_URL: https://chat.cloud.bncrt.com
+      ENABLE_IMAGE_GENERATION: true
+      IMAGES_OPENAI_API_BASE_URL: http://litellm:4000/v1
+      IMAGES_OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      IMAGE_GENERATION_MODEL: bedrock-sdxl-v1
+      RAG_EMBEDDING_ENGINE: openai
+      RAG_EMBEDDING_MODEL: bedrock-amazon-titan-embed-text-v2
+      TIKA_SERVER_URL: http://tika:9998
     ports:
       - 3000:8080
     volumes:
