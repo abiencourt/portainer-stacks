@@ -16,6 +16,6 @@ model_list:
       input_cost_per_token: 0.00000002
 
   ## Image Generator
-  - model_name: bedrock-sdxl-v1
+  - model_name: bedrock-sd3-5-large-v1
     litellm_params:
-      model: bedrock/stability.stable-diffusion-xl-v1
+      model: bedrock/stability.sd3-5-large-v1:0
